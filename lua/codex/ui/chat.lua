@@ -77,10 +77,21 @@ local function run_chat(prompt, transcript)
     append(buf, { "" })
   end
 
-  vim.schedule(function()
-    local resp, err = client.chat(prompt or "", context_data)
-    render_result(buf, resp, err)
-  end)
+  append(buf, { "Assistant:", "" })
+
+  client.chat_stream(prompt or "", context_data, {
+    on_message = function(chunk)
+      if chunk and chunk ~= "" then
+        append(buf, { chunk })
+      end
+    end,
+    on_error = function(err)
+      append(buf, { "Error:", err })
+    end,
+    on_complete = function()
+      append(buf, { "", "[Done]" })
+    end,
+  })
 end
 
 function M.open(opts)

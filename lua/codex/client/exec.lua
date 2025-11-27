@@ -46,7 +46,7 @@ local function handle_line(line)
     local norm = normalize_item(obj)
     if norm then
       status.append_event(norm)
-    }
+    end
   elseif obj.type == "error" then
     status.append_event({ kind = "agent_message", text = obj.message })
   end

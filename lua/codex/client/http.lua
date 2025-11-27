@@ -101,19 +101,58 @@ function M.chat(prompt, ctx)
 end
 
 function M.chat_stream(prompt, ctx, handlers)
-  -- Placeholder streaming: fall back to non-stream request and emit once.
   handlers = handlers or {}
-  local resp, err = M.chat(prompt, ctx)
-  if err and handlers.on_error then
-    handlers.on_error(err)
+  if not curl_ok then
+    if handlers.on_error then
+      handlers.on_error("plenary.curl not available")
+    end
     return
   end
-  if handlers.on_message and resp then
-    handlers.on_message(resp)
+
+  local cfg = config.get()
+  local headers = {
+    ["Content-Type"] = "application/json",
+  }
+  local auth = auth_header()
+  if auth then
+    headers["Authorization"] = auth
   end
-  if handlers.on_complete then
-    handlers.on_complete()
-  end
+
+  local payload = {
+    model = cfg.model,
+    input = prompt,
+    reasoning = { effort = cfg.reasoning_effort },
+    stream = true,
+    metadata = {
+      filetype = ctx and ctx.filetype or nil,
+      filepath = ctx and ctx.filepath or nil,
+    },
+  }
+
+  local buffer = {}
+  curl.post({
+    url = cfg.base_url .. "/responses",
+    headers = headers,
+    body = vim.json.encode(payload),
+    stream = true,
+    timeout = cfg.request_timeout_ms / 1000,
+    on_chunk = function(chunk, _)
+      if chunk and chunk ~= "" then
+        table.insert(buffer, chunk)
+        if handlers.on_message then
+          handlers.on_message(chunk)
+        end
+      end
+    end,
+    callback = function(res)
+      if res and res.status ~= 200 and handlers.on_error then
+        handlers.on_error(("HTTP error %s"):format(res.status))
+      end
+      if handlers.on_complete then
+        handlers.on_complete(table.concat(buffer))
+      end
+    end,
+  })
 end
 
 function M.edits(prompt, ctx)
