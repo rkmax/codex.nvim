@@ -26,9 +26,6 @@ local function create_window()
   vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
 
-  -- Input prompt at the bottom
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "Codex Chat", string.rep("-", 40), "", "Prompt: ", "", "Response will appear below...", "" })
-
   vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, silent = true })
   vim.keymap.set("n", "<Esc>", "<cmd>close<cr>", { buffer = buf, silent = true })
 
@@ -70,23 +67,49 @@ local function render_result(buf, resp, err)
   end
 end
 
-function M.open(opts)
-  opts = opts or {}
+local function run_chat(prompt)
   local buf = create_window()
   local context_data = ctx.capture({})
-  render_header(buf, opts.prompt, context_data)
+  render_header(buf, prompt, context_data)
 
   vim.schedule(function()
-    local resp, err = client.chat(opts.prompt or "", context_data)
+    local resp, err = client.chat(prompt or "", context_data)
     render_result(buf, resp, err)
   end)
+end
+
+function M.open(opts)
+  opts = opts or {}
+  local prompt = opts.prompt
+  if not prompt or prompt == "" then
+    vim.ui.input({ prompt = "Codex prompt: " }, function(input)
+      if not input or input == "" then
+        log.warn("Empty prompt; aborting.")
+        return
+      end
+      run_chat(input)
+    end)
+    return
+  end
+
+  run_chat(prompt)
 end
 
 function M.ask(kind, opts)
   opts = opts or {}
   local prompt = opts.prompt or ""
-  local header = ("[%s] %s"):format(kind, prompt)
-  M.open({ prompt = header })
+  if prompt == "" then
+    vim.ui.input({ prompt = ("Codex %s: "):format(kind) }, function(input)
+      if not input or input == "" then
+        log.warn("Empty prompt; aborting.")
+        return
+      end
+      run_chat(("[%s] %s"):format(kind, input))
+    end)
+    return
+  end
+
+  run_chat(("[%s] %s"):format(kind, prompt))
 end
 
 return M
