@@ -65,9 +65,9 @@ local function render_result(buf, resp, err)
   end
 end
 
-local function run_chat(prompt, transcript)
+local function run_chat(prompt, transcript, context_data)
   local buf = create_window()
-  local context_data = ctx.capture({})
+  local context_data = context_data or ctx.capture({})
   render_header(buf, prompt, context_data)
 
   if transcript then
@@ -97,35 +97,40 @@ end
 function M.open(opts)
   opts = opts or {}
   local prompt = opts.prompt
+  local context_data = ctx.capture({})
   if not prompt or prompt == "" then
     vim.ui.input({ prompt = "Codex prompt: " }, function(input)
       if not input or input == "" then
         log.warn("Empty prompt; aborting.")
         return
       end
-      run_chat(input)
+      run_chat(input, opts.transcript, context_data)
     end)
     return
   end
 
-  run_chat(prompt, opts.transcript)
+  run_chat(prompt, opts.transcript, context_data)
 end
 
 function M.ask(kind, opts)
   opts = opts or {}
+  local context_data = ctx.capture({})
   local prompt = opts.prompt or ""
+  if context_data.selection and context_data.selection ~= "" then
+    prompt = prompt .. "\n\nSelected code:\n" .. context_data.selection
+  end
   if prompt == "" then
     vim.ui.input({ prompt = ("Codex %s: "):format(kind) }, function(input)
       if not input or input == "" then
         log.warn("Empty prompt; aborting.")
         return
       end
-      run_chat(("[%s] %s"):format(kind, input), opts.transcript)
+      run_chat(("[%s] %s"):format(kind, input), opts.transcript, context_data)
     end)
     return
   end
 
-  run_chat(("[%s] %s"):format(kind, prompt), opts.transcript)
+  run_chat(("[%s] %s"):format(kind, prompt), opts.transcript, context_data)
 end
 
 function M.apply(opts)
