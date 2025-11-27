@@ -3,6 +3,7 @@ local M = {}
 local defaults = {
   model = "gpt-5.1-codex",
   model_provider = "openai",
+  base_url = "https://api.openai.com/v1",
   profile = nil,
   reasoning_effort = "medium", -- low | medium | high
   sandbox_mode = "read-only",
