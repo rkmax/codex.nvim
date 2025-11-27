@@ -15,7 +15,7 @@ local function should_show(event)
   if not event or not event.kind then
     return false
   end
-  if event.kind == "agent_message" or event.kind == "reasoning" then
+  if event.kind == "agent_message" or event.kind == "reasoning" or event.kind == "todo_list" then
     return true
   end
   if event.kind == "command_execution" and state.filters.commands then
@@ -45,8 +45,11 @@ local function render()
   table.insert(lines, "")
   for _, ev in ipairs(state.events) do
     if should_show(ev) then
-      local line = ("%s: %s"):format(ev.kind, ev.text or ev.command or "")
-      table.insert(lines, line)
+      local text = ev.text or ev.command or ""
+      if ev.kind == "command_execution" and ev.status then
+        text = ("%s (status: %s)"):format(text, ev.status)
+      end
+      table.insert(lines, ("%s: %s"):format(ev.kind, text))
     end
   end
   vim.api.nvim_buf_set_lines(state.buf, 0, -1, false, lines)

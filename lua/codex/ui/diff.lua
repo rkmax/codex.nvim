@@ -2,9 +2,12 @@ local log = require("codex.log")
 
 local M = {}
 
+local function split_lines(text)
+  return vim.split(text, "\n", true)
+end
+
 local function apply_full_buffer(bufnr, text)
-  local lines = vim.split(text, "\n", true)
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, split_lines(text))
   log.info("Applied Codex edits to buffer.")
 end
 
@@ -16,16 +19,21 @@ function M.show(edits)
   local bufnr = vim.api.nvim_get_current_buf()
   local name = vim.api.nvim_buf_get_name(bufnr)
 
-  local diff_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, vim.split(edits, "\n", true))
-  vim.api.nvim_buf_set_option(diff_buf, "filetype", vim.bo.filetype)
+  local current_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  local edit_lines = split_lines(edits)
 
-  vim.cmd("vsplit")
-  local diff_win = vim.api.nvim_get_current_win()
-  vim.api.nvim_win_set_buf(diff_win, diff_buf)
-  vim.api.nvim_win_set_option(diff_win, "number", true)
-  vim.api.nvim_win_set_option(diff_win, "relativenumber", true)
-  vim.api.nvim_buf_set_option(diff_buf, "modifiable", false)
+  local tmpfile = vim.fn.tempname()
+  local editfile = vim.fn.tempname()
+  vim.fn.writefile(current_lines, tmpfile)
+  vim.fn.writefile(edit_lines, editfile)
+
+  local diff_buf = vim.api.nvim_create_buf(false, true)
+  local diff_output = vim.fn.systemlist({ "diff", "-u", tmpfile, editfile })
+  if #diff_output == 0 then
+    diff_output = { "[No differences]" }
+  end
+  vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, diff_output)
+  vim.api.nvim_buf_set_option(diff_buf, "filetype", "diff")
 
   local group = vim.api.nvim_create_augroup("CodexDiff", { clear = true })
   vim.api.nvim_create_autocmd("BufLeave", {
@@ -35,20 +43,13 @@ function M.show(edits)
       if vim.api.nvim_buf_is_valid(diff_buf) then
         vim.api.nvim_buf_delete(diff_buf, { force = true })
       end
-    end,
+  end,
   })
 
-  vim.keymap.set("n", "q", function()
-    if vim.api.nvim_win_is_valid(diff_win) then
-      vim.api.nvim_win_close(diff_win, true)
-    end
-  end, { buffer = diff_buf, silent = true })
-
+  vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = diff_buf, silent = true })
   vim.keymap.set("n", "a", function()
     apply_full_buffer(bufnr, edits)
-    if vim.api.nvim_win_is_valid(diff_win) then
-      vim.api.nvim_win_close(diff_win, true)
-    end
+    vim.cmd("close")
   end, { buffer = diff_buf, silent = true })
 
   log.info(("Showing Codex edits for %s (a=apply, q=close)"):format(name ~= "" and name or "[No Name]"))
