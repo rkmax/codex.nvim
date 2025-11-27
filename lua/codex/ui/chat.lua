@@ -94,6 +94,7 @@ local function run_chat(prompt, transcript, context_data)
     end,
     on_error = function(err)
       append(buf, { "Error:", err })
+      state.add_message("assistant", "[error] " .. err)
     end,
     on_complete = function()
       append(buf, { "", "[Done]" })

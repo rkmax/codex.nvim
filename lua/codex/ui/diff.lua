@@ -94,7 +94,17 @@ function M.show(edits)
   vim.fn.writefile(edit_lines, editfile)
 
   local diff_buf = vim.api.nvim_create_buf(false, true)
-  local diff_output = vim.fn.systemlist({ "diff", "-u", tmpfile, editfile })
+  local diff_output
+  if vim.fn.executable("diff") == 1 then
+    diff_output = vim.fn.systemlist({ "diff", "-u", tmpfile, editfile })
+  else
+    local ok, res = pcall(vim.diff, current_lines, edit_lines, { result_type = "unified" })
+    if ok and type(res) == "table" and #res > 0 then
+      diff_output = res
+    else
+      diff_output = {}
+    end
+  end
   if #diff_output == 0 then
     diff_output = { "[No differences]" }
   end
