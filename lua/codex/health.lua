@@ -77,6 +77,14 @@ local function check_base_url(cfg)
   end
 end
 
+local function check_cli()
+  if vim.fn.executable("codex") == 1 then
+    ok("codex CLI available in PATH")
+  else
+    warn("codex CLI not found; exec integration will be unavailable")
+  end
+end
+
 local M = {}
 
 function M.check()
@@ -95,6 +103,7 @@ function M.check()
   check_auth(cfg)
   check_git()
   check_base_url(cfg)
+  check_cli()
 
   health.report_ok("Health checks completed")
 end
