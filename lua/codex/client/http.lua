@@ -112,6 +112,7 @@ function M.chat_stream(prompt, ctx, handlers)
   local cfg = config.get()
   local headers = {
     ["Content-Type"] = "application/json",
+    ["Accept"] = "text/event-stream",
   }
   local auth = auth_header()
   if auth then
@@ -129,7 +130,32 @@ function M.chat_stream(prompt, ctx, handlers)
     },
   }
 
-  local buffer = {}
+  local buffer = ""
+  local done = false
+
+  local function flush_lines()
+    local lines = vim.split(buffer, "\n", { plain = true })
+    -- keep last as potential partial
+    buffer = table.remove(lines)
+    for _, line in ipairs(lines) do
+      if line ~= "" then
+        local data = line
+        local prefix = "data:"
+        if vim.startswith(line, prefix) then
+          data = vim.trim(string.sub(line, #prefix + 1))
+        end
+        if data == "[DONE]" then
+          done = true
+          if handlers.on_complete then
+            handlers.on_complete()
+          end
+        elseif handlers.on_message then
+          handlers.on_message(data)
+        end
+      end
+    end
+  end
+
   curl.post({
     url = cfg.base_url .. "/responses",
     headers = headers,
@@ -138,18 +164,16 @@ function M.chat_stream(prompt, ctx, handlers)
     timeout = cfg.request_timeout_ms / 1000,
     on_chunk = function(chunk, _)
       if chunk and chunk ~= "" then
-        table.insert(buffer, chunk)
-        if handlers.on_message then
-          handlers.on_message(chunk)
-        end
+        buffer = buffer .. chunk
+        flush_lines()
       end
     end,
     callback = function(res)
-      if res and res.status ~= 200 and handlers.on_error then
+      if res and res.status and res.status ~= 200 and handlers.on_error then
         handlers.on_error(("HTTP error %s"):format(res.status))
       end
-      if handlers.on_complete then
-        handlers.on_complete(table.concat(buffer))
+      if not done and handlers.on_complete then
+        handlers.on_complete(buffer)
       end
     end,
   })
