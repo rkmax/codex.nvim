@@ -88,7 +88,7 @@ local function run_chat(prompt, transcript, context_data)
   client.chat_stream(prompt or "", context_data, {
     on_message = function(chunk)
       if chunk and chunk ~= "" then
-        append(buf, vim.split(chunk, "\n", { trimempty = true }))
+        append(buf, { chunk })
         table.insert(assistant_text, chunk)
       end
     end,

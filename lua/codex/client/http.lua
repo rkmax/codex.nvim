@@ -132,6 +132,33 @@ function M.chat_stream(prompt, ctx, handlers)
 
   local buffer = ""
   local done = false
+  local aggregated = {}
+
+  local function emit_text(text)
+    if handlers.on_message then
+      handlers.on_message(text)
+    end
+    table.insert(aggregated, text)
+  end
+
+  local function handle_data(raw)
+    if raw == "[DONE]" then
+      done = true
+      return
+    end
+    local ok, obj = pcall(vim.json.decode, raw)
+    if not ok or type(obj) ~= "table" then
+      emit_text(raw)
+      return
+    end
+    if obj.type == "response.output_text.delta" and obj.delta then
+      emit_text(obj.delta)
+    elseif obj.type == "response.output_text" and obj.output_text then
+      emit_text(obj.output_text)
+    elseif obj.type == "error" and handlers.on_error then
+      handlers.on_error(obj.error or obj.message or "Unknown error")
+    end
+  end
 
   local function flush_lines()
     local lines = vim.split(buffer, "\n", { plain = true })
@@ -144,14 +171,7 @@ function M.chat_stream(prompt, ctx, handlers)
         if vim.startswith(line, prefix) then
           data = vim.trim(string.sub(line, #prefix + 1))
         end
-        if data == "[DONE]" then
-          done = true
-          if handlers.on_complete then
-            handlers.on_complete()
-          end
-        elseif handlers.on_message then
-          handlers.on_message(data)
-        end
+        handle_data(data)
       end
     end
   end
@@ -173,7 +193,9 @@ function M.chat_stream(prompt, ctx, handlers)
         handlers.on_error(("HTTP error %s"):format(res.status))
       end
       if not done and handlers.on_complete then
-        handlers.on_complete(buffer)
+        handlers.on_complete(table.concat(aggregated))
+      elseif handlers.on_complete then
+        handlers.on_complete(table.concat(aggregated))
       end
     end,
   })
