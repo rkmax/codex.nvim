@@ -40,9 +40,15 @@ local function post_json(path, payload)
     body = vim.json.encode(payload),
   })
 
-  if not res or res.status ~= 200 then
-    local status = res and res.status or "nil"
-    return nil, ("HTTP error: %s"):format(status)
+  if not res then
+    return nil, "No response from server"
+  end
+
+  if res.status ~= 200 then
+    local parsed_err, _ = decode(res.body)
+    local detail = parsed_err and (parsed_err.detail or parsed_err.error and parsed_err.error.message)
+    local status = res.status or "unknown"
+    return nil, ("HTTP error %s: %s"):format(status, detail or "unknown error")
   end
 
   return decode(res.body)

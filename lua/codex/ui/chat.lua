@@ -26,6 +26,9 @@ local function create_window()
   vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
 
+  -- Input prompt at the bottom
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "Codex Chat", string.rep("-", 40), "", "Prompt: ", "", "Response will appear below...", "" })
+
   vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, silent = true })
   vim.keymap.set("n", "<Esc>", "<cmd>close<cr>", { buffer = buf, silent = true })
 
@@ -41,14 +44,20 @@ local function append(buf, lines)
 end
 
 local function render_header(buf, prompt, context_data)
-  append(buf, { "Codex Chat", string.rep("-", 40) })
+  local lines = {
+    "Codex Chat",
+    string.rep("-", 40),
+  }
   if prompt and prompt ~= "" then
-    append(buf, { "Prompt: " .. prompt })
+    table.insert(lines, "Prompt: " .. prompt)
   end
   if context_data and context_data.filepath and context_data.filepath ~= "" then
-    append(buf, { "File: " .. context_data.filepath })
+    table.insert(lines, "File: " .. context_data.filepath)
   end
-  append(buf, { "", "Sending request...", "" })
+  table.insert(lines, "")
+  table.insert(lines, "Sending request...")
+  table.insert(lines, "")
+  append(buf, lines)
 end
 
 local function render_result(buf, resp, err)
