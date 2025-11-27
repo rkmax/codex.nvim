@@ -8,8 +8,8 @@ local M = {}
 
 local function create_window()
   local buf = vim.api.nvim_create_buf(false, true)
-  local width = math.floor(vim.o.columns * 0.6)
-  local height = math.floor(vim.o.lines * 0.6)
+  local width = math.floor(vim.o.columns * 0.7)
+  local height = math.floor(vim.o.lines * 0.7)
   local row = math.floor((vim.o.lines - height) / 2)
   local col = math.floor((vim.o.columns - width) / 2)
 
@@ -40,6 +40,9 @@ local function append(buf, lines)
   end
   local line_count = vim.api.nvim_buf_line_count(buf)
   vim.api.nvim_buf_set_lines(buf, line_count, line_count, false, lines)
+  vim.api.nvim_buf_call(buf, function()
+    vim.cmd("normal! G")
+  end)
 end
 
 local function render_header(buf, prompt, context_data)

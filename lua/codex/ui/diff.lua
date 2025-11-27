@@ -34,6 +34,7 @@ function M.show(edits)
   end
   vim.api.nvim_buf_set_lines(diff_buf, 0, -1, false, diff_output)
   vim.api.nvim_buf_set_option(diff_buf, "filetype", "diff")
+  vim.api.nvim_buf_set_option(diff_buf, "modifiable", false)
 
   local group = vim.api.nvim_create_augroup("CodexDiff", { clear = true })
   vim.api.nvim_create_autocmd("BufLeave", {
