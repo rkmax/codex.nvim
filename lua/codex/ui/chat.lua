@@ -41,36 +41,40 @@ local function append(buf, lines)
 end
 
 local function render_header(buf, prompt, context_data)
-  local lines = {
+  append(buf, {
     "Codex Chat",
     string.rep("-", 40),
-  }
+  })
   if prompt and prompt ~= "" then
-    table.insert(lines, "Prompt: " .. prompt)
+    append(buf, { "User:", prompt, "" })
   end
   if context_data and context_data.filepath and context_data.filepath ~= "" then
-    table.insert(lines, "File: " .. context_data.filepath)
+    append(buf, { ("File: %s"):format(context_data.filepath), "" })
   end
-  table.insert(lines, "")
-  table.insert(lines, "Sending request...")
-  table.insert(lines, "")
-  append(buf, lines)
+  append(buf, { "Waiting for response...", "" })
 end
 
 local function render_result(buf, resp, err)
   if err then
     append(buf, { "Error:", err })
   elseif resp then
-    append(buf, { "Response:", resp })
+    append(buf, { "Assistant:", resp })
   else
     append(buf, { "No response." })
   end
 end
 
-local function run_chat(prompt)
+local function run_chat(prompt, transcript)
   local buf = create_window()
   local context_data = ctx.capture({})
   render_header(buf, prompt, context_data)
+
+  if transcript then
+    for _, msg in ipairs(transcript) do
+      append(buf, { ("%s: %s"):format(msg.role, msg.content) })
+    end
+    append(buf, { "" })
+  end
 
   vim.schedule(function()
     local resp, err = client.chat(prompt or "", context_data)
@@ -92,7 +96,7 @@ function M.open(opts)
     return
   end
 
-  run_chat(prompt)
+  run_chat(prompt, opts.transcript)
 end
 
 function M.ask(kind, opts)
@@ -104,12 +108,12 @@ function M.ask(kind, opts)
         log.warn("Empty prompt; aborting.")
         return
       end
-      run_chat(("[%s] %s"):format(kind, input))
+      run_chat(("[%s] %s"):format(kind, input), opts.transcript)
     end)
     return
   end
 
-  run_chat(("[%s] %s"):format(kind, prompt))
+  run_chat(("[%s] %s"):format(kind, prompt), opts.transcript)
 end
 
 return M
