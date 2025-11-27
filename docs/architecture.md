@@ -11,7 +11,8 @@
 - Structured output: `--output-schema` style is available; streaming JSON events from `codex exec --json` are stable.
 - Sandbox: read-only blocks writes; `--full-auto` allows workspace writes; respect git requirement or warn if `--skip-git-repo-check` is needed.
 - Platform: recommend WSL2 on Windows; do not promise native sandbox guarantees.
-- MCP/execpolicy: optional; skip by default unless configured.
+- MCP/execpolicy: out of scope for the initial iteration; treat as disabled/unsupported unless explicitly revisited later.
+- Images: defer full image-attachment support; no end-to-end handling in the initial iteration.
 
 ## Module layout (Lua)
 - `lua/codex/init.lua`: setup entrypoint; merges user config; registers commands.
@@ -22,7 +23,7 @@
 - `lua/codex/ui/`:
   - `chat.lua`: floating window/chat buffer, streaming appender, markdown rendering.
   - `diff.lua`: diff/apply flow for edits.
-  - `status.lua`: optional event log (if exec JSON is consumed) and sandbox/model indicators.
+  - `status.lua`: event log that consumes full `codex exec --json` stream with filtering (show agent/reasoning by default, allow toggling command/file-change visibility) and sandbox/model indicators; includes keybinds to collapse noisy entries and jump to the exec terminal buffer.
 - `lua/codex/context.lua`: capture selection/filetype/cursor/workspace signals; optional image attachment path handling.
 - `lua/codex/prompts.lua`: load prompts from `~/.codex/prompts/*.md`, expand placeholders, list in `:CodexPrompt`.
 - `lua/codex/health.lua`: `:checkhealth codex` (Neovim version, auth presence, network check, git repo, optional execpolicy/prompt dir, tmux/zellij if CLI enabled).
@@ -35,6 +36,10 @@
 - Prompts: prompt directory path, include/exclude list.
 - UI: floating window options (size, border), diff styling, virtual text toggle, log panel toggle.
 - CLI integration (optional): enable flag, command template (`codex --enable web_search_request` etc.), mux backend (`tmux`/`zellij`), auto-attach settings.
+- MCP: disabled by default and not implemented in the first iteration.
+- Images: leave attachment disabled until a later iteration; avoid UI affordances that imply support.
+- Exec stream UI: default to showing the full JSON stream in a Neovim panel with filters (agent/reasoning always on; command/file-change entries toggleable) so users can audit actions without leaving the editor.
+  - UX details: panel opened via a command/keymap (e.g., `:CodexLog`), buffer-local mappings to toggle categories (agent/reasoning/commands/file changes/web search), collapse/expand entries, and a shortcut to focus the underlying exec terminal if needed.
 
 ## Command flows
 - Chat (`:CodexChat`): open chat UI; send context (selection/file metadata); stream assistant tokens; support structured output option.
@@ -55,6 +60,3 @@
 - Lua lint/format: stylua, selene; CI workflow stub.
 
 ## Open questions
-- Do we expose MCP/execpolicy toggles in setup, or gate behind explicit opts?
-- How much of `codex exec` event stream should surface in UI vs terminal-only?
-- Do we support image attachment end-to-end in chat flow initially or defer?
