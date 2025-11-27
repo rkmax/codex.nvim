@@ -2,6 +2,7 @@ local log = require("codex.log")
 local ctx = require("codex.context")
 local client = require("codex.client.http")
 local diff = require("codex.ui.diff")
+local state = require("codex.state")
 
 local M = {}
 
@@ -77,12 +78,15 @@ local function run_chat(prompt, transcript, context_data)
     append(buf, { "" })
   end
 
+  state.add_message("user", prompt or "")
+  local assistant_text = {}
   append(buf, { "Assistant:", "" })
 
   client.chat_stream(prompt or "", context_data, {
     on_message = function(chunk)
       if chunk and chunk ~= "" then
         append(buf, { chunk })
+        table.insert(assistant_text, chunk)
       end
     end,
     on_error = function(err)
@@ -90,6 +94,10 @@ local function run_chat(prompt, transcript, context_data)
     end,
     on_complete = function()
       append(buf, { "", "[Done]" })
+      local full = table.concat(assistant_text, "")
+      if full ~= "" then
+        state.add_message("assistant", full)
+      end
     end,
   })
 end
@@ -104,12 +112,12 @@ function M.open(opts)
         log.warn("Empty prompt; aborting.")
         return
       end
-      run_chat(input, opts.transcript, context_data)
+      run_chat(input, state.get_transcript(), context_data)
     end)
     return
   end
 
-  run_chat(prompt, opts.transcript, context_data)
+  run_chat(prompt, state.get_transcript(), context_data)
 end
 
 function M.ask(kind, opts)
@@ -125,12 +133,12 @@ function M.ask(kind, opts)
         log.warn("Empty prompt; aborting.")
         return
       end
-      run_chat(("[%s] %s"):format(kind, input), opts.transcript, context_data)
+      run_chat(("[%s] %s"):format(kind, input), state.get_transcript(), context_data)
     end)
     return
   end
 
-  run_chat(("[%s] %s"):format(kind, prompt), opts.transcript, context_data)
+  run_chat(("[%s] %s"):format(kind, prompt), state.get_transcript(), context_data)
 end
 
 function M.apply(opts)
@@ -149,6 +157,8 @@ function M.apply(opts)
         return
       end
       diff.show(resp)
+      state.add_message("user", input)
+      state.add_message("assistant", resp or "")
     end)
     return
   end
@@ -160,6 +170,8 @@ function M.apply(opts)
     return
   end
   diff.show(resp)
+  state.add_message("user", prompt)
+  state.add_message("assistant", resp or "")
 end
 
 return M
