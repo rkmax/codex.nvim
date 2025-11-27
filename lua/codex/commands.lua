@@ -31,7 +31,7 @@ function M.register()
   end)
 
   create("CodexApply", { nargs = "*", desc = "Apply edits to buffer" }, function(opts)
-    chat.ask("apply", { prompt = opts.args })
+    chat.apply({ prompt = opts.args })
   end)
 
   create("CodexPrompt", { nargs = "+", desc = "Run a prompt by name" }, function(opts)

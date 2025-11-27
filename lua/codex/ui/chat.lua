@@ -1,6 +1,7 @@
 local log = require("codex.log")
 local ctx = require("codex.context")
 local client = require("codex.client.http")
+local diff = require("codex.ui.diff")
 
 local M = {}
 
@@ -114,6 +115,35 @@ function M.ask(kind, opts)
   end
 
   run_chat(("[%s] %s"):format(kind, prompt), opts.transcript)
+end
+
+function M.apply(opts)
+  opts = opts or {}
+  local prompt = opts.prompt or ""
+  if prompt == "" then
+    vim.ui.input({ prompt = "Codex apply prompt: " }, function(input)
+      if not input or input == "" then
+        log.warn("Empty prompt; aborting.")
+        return
+      end
+      local ctx_data = ctx.capture({})
+      local resp, err = client.edits(input, ctx_data)
+      if err then
+        log.error(err)
+        return
+      end
+      diff.show(resp)
+    end)
+    return
+  end
+
+  local ctx_data = ctx.capture({})
+  local resp, err = client.edits(prompt, ctx_data)
+  if err then
+    log.error(err)
+    return
+  end
+  diff.show(resp)
 end
 
 return M

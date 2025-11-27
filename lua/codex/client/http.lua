@@ -100,6 +100,22 @@ function M.chat(prompt, ctx)
   return normalize_output(parsed), nil
 end
 
+function M.chat_stream(prompt, ctx, handlers)
+  -- Placeholder streaming: fall back to non-stream request and emit once.
+  handlers = handlers or {}
+  local resp, err = M.chat(prompt, ctx)
+  if err and handlers.on_error then
+    handlers.on_error(err)
+    return
+  end
+  if handlers.on_message and resp then
+    handlers.on_message(resp)
+  end
+  if handlers.on_complete then
+    handlers.on_complete()
+  end
+end
+
 function M.edits(prompt, ctx)
   -- Placeholder for edits endpoint.
   local response, err = M.chat(prompt, ctx)
