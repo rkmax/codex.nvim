@@ -55,6 +55,10 @@ end
 local function spawn_cmd(prompt, opts)
   opts = opts or {}
   local cfg = config.get()
+  if not cfg.cli.enabled then
+    log.warn("Codex CLI integration disabled in config.")
+    return
+  end
   local cmd = { cfg.cli.command or "codex", "--json" }
   if opts.resume then
     table.insert(cmd, "resume")
