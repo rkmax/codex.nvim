@@ -85,6 +85,15 @@ local function check_cli()
   end
 end
 
+local function check_prompts(cfg)
+  local dir = cfg.prompt_dir
+  if dir and vim.fn.isdirectory(dir) == 1 then
+    ok(("Prompt dir present: %s"):format(dir))
+  else
+    warn(("Prompt dir missing: %s"):format(dir or "unset"))
+  end
+end
+
 local M = {}
 
 function M.check()
@@ -104,6 +113,7 @@ function M.check()
   check_git()
   check_base_url(cfg)
   check_cli()
+  check_prompts(cfg)
 
   health.report_ok("Health checks completed")
 end
