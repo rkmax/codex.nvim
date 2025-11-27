@@ -1,5 +1,3 @@
-local config = require("codex.config")
-
 local M = {}
 
 local state = {
@@ -14,19 +12,19 @@ local state = {
 }
 
 local function should_show(event)
-  if not event or not event.type then
+  if not event or not event.kind then
     return false
   end
-  if event.type == "agent_message" or event.type == "reasoning" then
+  if event.kind == "agent_message" or event.kind == "reasoning" then
     return true
   end
-  if event.type == "command_execution" and state.filters.commands then
+  if event.kind == "command_execution" and state.filters.commands then
     return true
   end
-  if event.type == "file_change" and state.filters.file_changes then
+  if event.kind == "file_change" and state.filters.file_changes then
     return true
   end
-  if event.type == "web_search" and state.filters.web then
+  if event.kind == "web_search" and state.filters.web then
     return true
   end
   return false
@@ -43,10 +41,11 @@ local function render()
     tostring(state.filters.file_changes),
     tostring(state.filters.web)
   ))
+  table.insert(lines, "Keymaps: c=toggle commands, f=toggle file changes, w=toggle web, q=close")
   table.insert(lines, "")
   for _, ev in ipairs(state.events) do
     if should_show(ev) then
-      local line = ("%s: %s"):format(ev.type, ev.text or ev.command or "")
+      local line = ("%s: %s"):format(ev.kind, ev.text or ev.command or "")
       table.insert(lines, line)
     end
   end
@@ -107,10 +106,6 @@ function M.open()
 end
 
 function M.append_event(event)
-  local cfg = config.get()
-  if not cfg.cli.enabled then
-    return
-  end
   table.insert(state.events, event)
   render()
 end

@@ -4,23 +4,51 @@ local config = require("codex.config")
 
 local M = {}
 
+local function normalize_item(obj)
+  if not obj or not obj.item then
+    return nil
+  end
+  local item = obj.item
+  local kind = item.type or "unknown"
+
+  if kind == "command_execution" then
+    return {
+      kind = kind,
+      command = item.command,
+      text = item.aggregated_output,
+      status = item.status,
+      exit_code = item.exit_code,
+    }
+  elseif kind == "agent_message" or kind == "reasoning" or kind == "web_search" or kind == "todo_list" then
+    return {
+      kind = kind,
+      text = item.text,
+    }
+  elseif kind == "file_change" then
+    return {
+      kind = kind,
+      text = item.path or item.summary or "file change",
+    }
+  else
+    return {
+      kind = kind,
+      text = item.text or item.summary,
+    }
+  end
+end
+
 local function handle_line(line)
   local ok, obj = pcall(vim.json.decode, line)
   if not ok then
     return
   end
-  if obj.type == "item.completed" or obj.type == "item.started" then
-    status.append_event(obj.item)
-  elseif obj.type == "item.updated" then
-    status.append_event(obj.item)
-  elseif obj.type == "item.completed" then
-    status.append_event(obj.item)
-  elseif obj.type == "item.completed" then
-    status.append_event(obj.item)
-  elseif obj.type == "item.completed" then
-    status.append_event(obj.item)
+  if obj.type == "item.completed" or obj.type == "item.updated" or obj.type == "item.started" then
+    local norm = normalize_item(obj)
+    if norm then
+      status.append_event(norm)
+    }
   elseif obj.type == "error" then
-    status.append_event({ type = "agent_message", text = obj.message })
+    status.append_event({ kind = "agent_message", text = obj.message })
   end
 end
 
@@ -31,14 +59,16 @@ local function spawn_cmd(prompt, opts)
   if opts.resume then
     table.insert(cmd, "resume")
     table.insert(cmd, "--last")
-  else
+  elseif prompt and prompt ~= "" then
     table.insert(cmd, prompt)
+  else
+    log.warn("No prompt provided for Codex exec.")
+    return
   end
 
   status.open()
 
-  local handle
-  handle = vim.fn.jobstart(cmd, {
+  local handle = vim.fn.jobstart(cmd, {
     stdout_buffered = false,
     on_stdout = function(_, data, _)
       for _, line in ipairs(data) do
