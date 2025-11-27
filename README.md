@@ -26,7 +26,7 @@ Requirements: Neovim 0.9+, `plenary.curl`, Codex auth (`~/.codex/auth.json` or e
 ## Commands
 - `:CodexChat [prompt]` open chat (prompts via `vim.ui.input` if omitted).
 - `:CodexAsk|Explain|Fix [prompt]` use selection/file context; streams response.
-- `:CodexApply [prompt]` shows edits in vsplit, `a` to apply, `q` to close.
+- `:CodexApply [prompt]` shows unified diff in vsplit; `a` apply buffer, `A` apply all hunks, `h` apply current hunk, `n/p` navigate hunks, `q` close.
 - `:CodexPrompt <name> [ARGS]` run prompt from `~/.codex/prompts/*.md` (`$ARGUMENTS` expands).
 - `:CodexLog` open exec event log; `c/f/w` toggle commands/files/web; `q` close.
 - `:CodexExec <prompt>` runs `codex exec --json` (requires `cli.enabled=true`).
@@ -47,7 +47,6 @@ See `lua/codex/config.lua`:
 - UI borders/sizes and log filters configurable.
 
 ## Roadmap (short)
-- Diff hunk navigation/apply.
 - Markdown/scroll polish for chat/log.
 - Better error surfacing and transcript persistence.
 
