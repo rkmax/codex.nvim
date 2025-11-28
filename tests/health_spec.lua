@@ -1,3 +1,5 @@
+local inspect = require("vim.inspect")
+
 local function fake_vim_env(opts)
   local calls = {}
   _G.vim = {
@@ -30,6 +32,7 @@ local function fake_vim_env(opts)
     version = function()
       return { major = 0, minor = 9, patch = 0 }
     end,
+    inspect = inspect,
   }
   return calls
 end
