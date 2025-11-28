@@ -13,6 +13,8 @@ local defaults = {
   prompt_dir = vim.fn.expand("~/.codex/prompts"),
   log_level = "info",
   structured_output = false,
+  available_models = { "gpt-5.1-codex", "gpt-4.1", "gpt-4o-mini" },
+  available_sandbox_modes = { "read-only", "workspace-write", "danger-full-access" },
   cli = {
     enabled = false,
     command = "codex",
@@ -44,6 +46,13 @@ function M.set(user)
     return
   end
   current = vim.tbl_deep_extend("force", vim.deepcopy(defaults), user)
+end
+
+function M.update(partial)
+  if type(partial) ~= "table" then
+    return
+  end
+  current = vim.tbl_deep_extend("force", current, partial)
 end
 
 function M.get()

@@ -4,6 +4,7 @@ local status = require("codex.ui.status")
 local exec = require("codex.client.exec")
 local health = require("codex.health")
 local log = require("codex.log")
+local config = require("codex.config")
 
 local M = {}
 
@@ -54,6 +55,49 @@ function M.register()
 
   create("CodexHealth", { nargs = 0, desc = "Run Codex health checks" }, function()
     health.check()
+  end)
+
+  create("CodexModel", { nargs = "?", desc = "Pick or set Codex model" }, function(opts)
+    local models = config.get().available_models or {}
+    if opts.args and opts.args ~= "" then
+      config.update({ model = opts.args })
+      log.info("Model set to " .. opts.args)
+      return
+    end
+    if #models == 0 then
+      log.warn("No models configured")
+      return
+    end
+    vim.ui.select(models, { prompt = "Select Codex model" }, function(choice)
+      if choice then
+        config.update({ model = choice })
+        log.info("Model set to " .. choice)
+      end
+    end)
+  end)
+
+  create("CodexSandbox", { nargs = "?", desc = "Pick or set sandbox mode" }, function(opts)
+    local modes = config.get().available_sandbox_modes or {}
+    if opts.args and opts.args ~= "" then
+      config.update({ sandbox_mode = opts.args })
+      log.info("Sandbox mode set to " .. opts.args)
+      return
+    end
+    if #modes == 0 then
+      log.warn("No sandbox modes configured")
+      return
+    end
+    vim.ui.select(modes, { prompt = "Select sandbox mode" }, function(choice)
+      if choice then
+        config.update({ sandbox_mode = choice })
+        log.info("Sandbox mode set to " .. choice)
+      end
+    end)
+  end)
+
+  create("CodexTranscriptClear", { nargs = 0, desc = "Clear Codex transcript" }, function()
+    require("codex.state").reset()
+    log.info("Transcript cleared.")
   end)
 
   log.info("Codex commands registered.")
