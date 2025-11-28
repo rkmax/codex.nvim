@@ -2,6 +2,7 @@ local inspect = require("vim.inspect")
 
 local function fake_vim_env(opts)
   local calls = {}
+  local original = _G.vim or {}
   _G.vim = {
     env = opts.env or {},
     v = { shell_error = opts.shell_error or 0 },
@@ -33,7 +34,9 @@ local function fake_vim_env(opts)
       return { major = 0, minor = 9, patch = 0 }
     end,
     inspect = inspect,
-    cmd = function() end,
+    cmd = original.cmd or function() end,
+    loop = original.loop,
+    api = original.api,
   }
   return calls
 end
