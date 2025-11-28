@@ -53,14 +53,14 @@ describe("health checks", function()
       end,
     }
 
-    local calls = fake_vim_env({
+    local _, restore = fake_vim_env({
       auth_present = true,
       git_executable = 1,
       prompt_dir_exists = true,
     })
 
     local reporter_calls = {}
-    package.loaded["vim.health"] = {
+    local reporter = {
       report_start = function(name)
         reporter_calls.start = name
       end,
@@ -74,6 +74,8 @@ describe("health checks", function()
         reporter_calls.error = (reporter_calls.error or 0) + 1
       end,
     }
+    package.loaded["vim.health"] = reporter
+    vim.health = reporter
 
     package.loaded["codex.health"] = nil
     local health = require("codex.health")
@@ -102,7 +104,7 @@ describe("health checks", function()
     })
 
     local reporter_calls = {}
-    package.loaded["vim.health"] = {
+    local reporter = {
       start = function(name)
         reporter_calls.start = name
       end,
@@ -116,6 +118,8 @@ describe("health checks", function()
         reporter_calls.error = (reporter_calls.error or 0) + 1
       end,
     }
+    package.loaded["vim.health"] = reporter
+    vim.health = reporter
 
     package.loaded["codex.health"] = nil
     local health = require("codex.health")
