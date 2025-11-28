@@ -1,8 +1,10 @@
 local inspect = require("vim.inspect")
 
+local real_vim = _G.vim
+
 local function fake_vim_env(opts)
   local calls = {}
-  local original = _G.vim or {}
+  local original = real_vim or {}
   _G.vim = {
     env = opts.env or {},
     v = { shell_error = opts.shell_error or 0 },
