@@ -1,17 +1,30 @@
 local config = require("codex.config")
 
 local health = vim.health or require("vim.health")
+local has_report_api = type(health.report_start) == "function"
 
 local function ok(msg)
-  health.report_ok(msg)
+  if has_report_api then
+    health.report_ok(msg)
+  else
+    health.ok(msg)
+  end
 end
 
 local function warn(msg)
-  health.report_warn(msg)
+  if has_report_api then
+    health.report_warn(msg)
+  else
+    health.warn(msg)
+  end
 end
 
 local function error(msg)
-  health.report_error(msg)
+  if has_report_api then
+    health.report_error(msg)
+  else
+    health.error(msg)
+  end
 end
 
 local function has_min_version()
@@ -97,7 +110,11 @@ end
 local M = {}
 
 function M.check()
-  health.report_start("codex")
+  if has_report_api then
+    health.report_start("codex")
+  else
+    health.start("codex")
+  end
 
   local cfg = config.get()
 
