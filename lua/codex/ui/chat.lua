@@ -8,25 +8,15 @@ local M = {}
 
 local function create_window()
   local buf = vim.api.nvim_create_buf(false, true)
-  local width = math.floor(vim.o.columns * 0.7)
-  local height = math.floor(vim.o.lines * 0.7)
-  local row = math.floor((vim.o.lines - height) / 2)
-  local col = math.floor((vim.o.columns - width) / 2)
-
-  local win = vim.api.nvim_open_win(buf, true, {
-    relative = "editor",
-    style = "minimal",
-    border = "single",
-    width = width,
-    height = height,
-    row = row,
-    col = col,
-  })
-
   vim.api.nvim_buf_set_option(buf, "filetype", "codexchat")
   vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
   vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
+
+  vim.cmd("vsplit")
+  local win = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_buf(win, buf)
+  vim.api.nvim_win_set_width(win, math.floor(vim.o.columns * 0.35))
 
   vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, silent = true })
   vim.keymap.set("n", "<Esc>", "<cmd>close<cr>", { buffer = buf, silent = true })
