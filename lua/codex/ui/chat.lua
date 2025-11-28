@@ -3,15 +3,17 @@ local ctx = require("codex.context")
 local client = require("codex.client.http")
 local diff = require("codex.ui.diff")
 local state = require("codex.state")
+local config = require("codex.config")
 
 local M = {}
 
 local function create_window()
   local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_option(buf, "filetype", "codexchat")
+  vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
   vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
   vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
   vim.api.nvim_buf_set_option(buf, "modifiable", true)
+  vim.api.nvim_buf_set_option(buf, "wrap", true)
 
   vim.cmd("vsplit")
   local win = vim.api.nvim_get_current_win()
@@ -36,10 +38,15 @@ local function append(buf, lines)
 end
 
 local function render_header(buf, prompt, context_data)
+  local cfg = config.get()
   append(buf, {
     "Codex Chat",
     string.rep("-", 40),
   })
+  append(buf, { ("Model: %s | Sandbox: %s | Reasoning: %s"):format(cfg.model, cfg.sandbox_mode, cfg.reasoning_effort) })
+  if cfg.structured_output then
+    append(buf, { "[Structured output enabled]" })
+  end
   if prompt and prompt ~= "" then
     append(buf, { "User:", prompt, "" })
   end

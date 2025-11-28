@@ -24,7 +24,7 @@ With `lazy.nvim`:
 Requirements: Neovim 0.9+, `plenary.curl`, Codex auth (`~/.codex/auth.json` or env key), optional `codex` CLI for exec log.
 
 ## Commands
-- `:CodexChat [prompt]` open chat in a left vsplit (prompts via `vim.ui.input` if omitted).
+- `:CodexChat [prompt]` open chat in a left vsplit (prompts via `vim.ui.input` if omitted); shows model/sandbox/reasoning in header.
 - `:CodexAsk|Explain|Fix [prompt]` use selection/file context; streams response.
 - `:CodexApply [prompt]` shows unified diff in vsplit; `a` apply buffer, `A` apply all hunks, `h` apply current hunk, `n/p` navigate hunks, `q` close.
 - `:CodexPrompt <name> [ARGS]` run prompt from `~/.codex/prompts/*.md` (`$ARGUMENTS` expands).
