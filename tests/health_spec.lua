@@ -1,46 +1,44 @@
 local inspect = require("vim.inspect")
 
 local real_vim = _G.vim
+local real_fn = real_vim.fn
+local real_env = real_vim.env
+local real_v = real_vim.v
 
 local function fake_vim_env(opts)
   local calls = {}
-  local original = real_vim or {}
-  _G.vim = {
-    env = opts.env or {},
-    v = { shell_error = opts.shell_error or 0 },
-    fn = {
-      executable = function()
-        calls.executable = true
-        return opts.git_executable or 1
-      end,
-      filereadable = function()
-        calls.filereadable = true
-        return opts.auth_present and 1 or 0
-      end,
-      expand = function(path)
-        return path:gsub("~", "/home/test")
-      end,
-      systemlist = function()
-        calls.systemlist = true
-        return { "/home/test/repo" }
-      end,
-      isdirectory = function()
-        return opts.prompt_dir_exists and 1 or 0
-      end,
-      readfile = function()
-        return {}
-      end,
-      writefile = function() end,
-    },
-    version = function()
-      return { major = 0, minor = 9, patch = 0 }
+  vim.env = opts.env or {}
+  vim.v = { shell_error = opts.shell_error or 0 }
+  vim.fn = setmetatable({
+    executable = function()
+      calls.executable = true
+      return opts.git_executable or 1
     end,
-    inspect = inspect,
-    cmd = original.cmd or function() end,
-    loop = original.loop,
-    api = original.api,
-  }
-  return calls
+    filereadable = function()
+      calls.filereadable = true
+      return opts.auth_present and 1 or 0
+    end,
+    expand = function(path)
+      return path:gsub("~", "/home/test")
+    end,
+    systemlist = function()
+      calls.systemlist = true
+      return { "/home/test/repo" }
+    end,
+    isdirectory = function()
+      return opts.prompt_dir_exists and 1 or 0
+    end,
+    readfile = function()
+      return {}
+    end,
+    writefile = function() end,
+  }, { __index = real_fn })
+
+  return calls, function()
+    vim.fn = real_fn
+    vim.env = real_env
+    vim.v = real_v
+  end
 end
 
 describe("health checks", function()
@@ -84,7 +82,7 @@ describe("health checks", function()
     end)
     assert.equals("codex", reporter_calls.start)
     assert.truthy(reporter_calls.ok and reporter_calls.ok > 0)
-    _G.vim = real_vim
+    restore()
   end)
 
   it("falls back to legacy health API when report_* missing", function()
@@ -97,7 +95,7 @@ describe("health checks", function()
       end,
     }
 
-    fake_vim_env({
+    local _, restore = fake_vim_env({
       auth_present = false,
       git_executable = 0,
       prompt_dir_exists = false,
@@ -126,6 +124,6 @@ describe("health checks", function()
     end)
     assert.equals("codex", reporter_calls.start)
     assert.truthy(reporter_calls.warn and reporter_calls.warn > 0)
-    _G.vim = real_vim
+    restore()
   end)
 end)
