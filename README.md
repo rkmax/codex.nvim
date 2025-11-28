@@ -32,12 +32,16 @@ Requirements: Neovim 0.9+, `plenary.curl`, Codex auth (`~/.codex/auth.json` or e
 - `:CodexExec <prompt>` runs `codex exec --json` (requires `cli.enabled=true`).
 - `:CodexExecResume` resume last exec session.
 - `:CodexHealth` run health checks.
+- `:CodexModel [name]` pick/set model from configured list.
+- `:CodexSandbox [mode]` pick/set sandbox mode.
+- `:CodexTranscriptClear` clear persisted transcript.
 
 ## Current behavior
 - Chat streams via SSE; selection is appended to prompt for ask/explain/fix.
 - Transcript kept in-memory per session; not persisted.
 - Apply flow replaces the entire buffer; no hunk-level apply yet.
 - Exec log shows agent/commands/file changes/web search with filters.
+- Transcript persists in `~/.cache/codex_transcript.json` and reloads on setup.
 
 ## Config (defaults)
 See `lua/codex/config.lua`:
