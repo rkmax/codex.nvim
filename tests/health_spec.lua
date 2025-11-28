@@ -89,47 +89,5 @@ describe("health checks", function()
 
   it("falls back to legacy health API when report_* missing", function()
     pending("Legacy health path not exercised in this environment")
-    return
-    package.loaded["codex.config"] = {
-      get = function()
-        return {
-          prompt_dir = "/tmp/prompts",
-          base_url = "http://example.com",
-        }
-      end,
-    }
-
-    local _, restore = fake_vim_env({
-      auth_present = false,
-      git_executable = 0,
-      prompt_dir_exists = false,
-    })
-
-    local reporter_calls = {}
-    local reporter = {
-      start = function(name)
-        reporter_calls.start = name
-      end,
-      ok = function(msg)
-        reporter_calls.ok = (reporter_calls.ok or 0) + 1
-      end,
-      warn = function(msg)
-        reporter_calls.warn = (reporter_calls.warn or 0) + 1
-      end,
-      error = function(msg)
-        reporter_calls.error = (reporter_calls.error or 0) + 1
-      end,
-    }
-    package.loaded["vim.health"] = reporter
-    vim.health = reporter
-
-    package.loaded["codex.health"] = nil
-    local health = require("codex.health")
-    assert.has_no.errors(function()
-      health.check()
-    end)
-    assert.equals("codex", reporter_calls.start)
-    assert.truthy(reporter_calls.warn and reporter_calls.warn > 0)
-    restore()
   end)
 end)
