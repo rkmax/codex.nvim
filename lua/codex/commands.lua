@@ -100,7 +100,7 @@ function M.register()
     log.info("Transcript cleared.")
   end)
 
-  log.info("Codex commands registered.")
+  log.debug("Codex commands registered.")
 end
 
 return M
