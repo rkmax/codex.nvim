@@ -33,6 +33,7 @@ local function fake_vim_env(opts)
       return { major = 0, minor = 9, patch = 0 }
     end,
     inspect = inspect,
+    cmd = function() end,
   }
   return calls
 end
