@@ -84,6 +84,7 @@ describe("health checks", function()
     end)
     assert.equals("codex", reporter_calls.start)
     assert.truthy(reporter_calls.ok and reporter_calls.ok > 0)
+    _G.vim = real_vim
   end)
 
   it("falls back to legacy health API when report_* missing", function()
@@ -125,5 +126,6 @@ describe("health checks", function()
     end)
     assert.equals("codex", reporter_calls.start)
     assert.truthy(reporter_calls.warn and reporter_calls.warn > 0)
+    _G.vim = real_vim
   end)
 end)
