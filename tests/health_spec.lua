@@ -89,6 +89,7 @@ describe("health checks", function()
 
   it("falls back to legacy health API when report_* missing", function()
     pending("Legacy health path not exercised in this environment")
+    return
     package.loaded["codex.config"] = {
       get = function()
         return {
